@@ -5,8 +5,11 @@ import uuid
 from core.queue import task_queue
 from core.tasks import process_task
 from db.job_store import save_job, get_job, update_job
+from core.logger import get_logger
 
 router = APIRouter()
+
+logger = get_logger(__name__)
 
 class TaskRequest(BaseModel):
     prompt: str
@@ -26,6 +29,8 @@ def create_task(task: TaskRequest):
     
     save_job(task_id, job_data)
     task_queue.enqueue("core.tasks.process_task", job_data)
+    
+    logger.info(f"Task created: {task_id}")
     
     return job_data
 

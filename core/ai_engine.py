@@ -2,8 +2,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from core.config import settings
-import os
-import time
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 llm = ChatOpenAI(
     model="gpt-4o-mini", 
@@ -35,6 +36,8 @@ def process_ai_task(task):
     prompt_type = task["task_type"]
     user_input = task["prompt"]
     
+    logger.info(f"Processing task {task['id']} with prompt type {prompt_type}")
+    
     prompt = get_prompt(prompt_type)
     
     chain = prompt | llm
@@ -42,6 +45,8 @@ def process_ai_task(task):
     response = chain.invoke({
         "input": user_input
     })
+    
+    logger.info(f"Task {task['id']} completed successfully")
         
     return {
         "task_id": task["id"],
