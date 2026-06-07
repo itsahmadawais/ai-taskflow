@@ -11,7 +11,7 @@ def process_summarization(task: Dict[str, Any]) -> Dict[str, Any]:
     """
     
     prompt = f"""
-    Summarize the following text in a consie way:
+    Summarize the following text concisely:
     
     {task["input"]["text"]}
     """
