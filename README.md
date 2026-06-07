@@ -370,6 +370,26 @@ ai-taskflow/
 
 ---
 
+## Design Decisions
+
+**Why Redis + RQ over Kafka?**
+RQ provides sufficient queue semantics for this workload without Kafka's operational overhead. 
+Appropriate for services processing thousands of tasks per day rather than millions per second.
+
+**Why PostgreSQL for task state?**
+Task results need durability and queryability. 
+Redis alone would lose state on restart. 
+PostgreSQL gives ACID guarantees for task metadata while Redis handles ephemeral queue coordination.
+
+**Why synchronous SQLAlchemy over async?**
+RQ workers run in separate processes — async, SQLAlchemy adds complexity without benefit in this context. Synchronous sessions are simpler, more debuggable, and appropriate for worker processes.
+
+**Why permanent vs transient error separation?**
+Retrying authentication failures or invalid requests wastes resources and masks bugs. 
+Retrying rate limits and timeouts recovers from infrastructure noise. The distinction matters in production.
+
+---
+
 ## Contributing
 
 Contributions, bug reports, and feature requests are welcome. Open an issue or submit a pull request.
