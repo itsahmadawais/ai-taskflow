@@ -1,12 +1,12 @@
 # AI TaskFlow
 
-Python
-FastAPI
-PostgreSQL
-Redis
-RQ
-LangChain
-License
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?style=flat&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat&logo=redis&logoColor=white)
+![RQ](https://img.shields.io/badge/RQ-2.9-red?style=flat)
+![LangChain](https://img.shields.io/badge/LangChain-OpenAI-1C3C3C?style=flat&logo=openai&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 
 A lightweight distributed task processing system for AI workloads built with FastAPI, PostgreSQL, Redis, and RQ.
 
@@ -38,15 +38,13 @@ LangChain / OpenAI
 
 ### Components
 
-
-| Layer       | Technology              | Responsibility                           |
-| ----------- | ----------------------- | ---------------------------------------- |
-| API         | FastAPI                 | Task submission, status retrieval, auth  |
-| Persistence | PostgreSQL + SQLAlchemy | Task state, inputs, outputs, errors      |
-| Queue       | Redis + RQ              | Job distribution between API and workers |
-| Workers     | RQ Worker               | Task execution, processor dispatch       |
-| LLM         | LangChain + OpenAI      | AI workload execution                    |
-
+| Layer | Technology | Responsibility |
+|---|---|---|
+| API | FastAPI | Task submission, status retrieval, auth |
+| Persistence | PostgreSQL + SQLAlchemy | Task state, inputs, outputs, errors |
+| Queue | Redis + RQ | Job distribution between API and workers |
+| Workers | RQ Worker | Task execution, processor dispatch |
+| LLM | LangChain + OpenAI | AI workload execution |
 
 ---
 
@@ -140,11 +138,9 @@ All protected routes require the `X-Service-Token` header.
 
 ### Authentication
 
-
-| Header            | Description                        |
-| ----------------- | ---------------------------------- |
+| Header | Description |
+|---|---|
 | `X-Service-Token` | Required on all `/api/v1/*` routes |
-
 
 ### Endpoints
 
@@ -185,14 +181,12 @@ Retrieve task status and result.
 
 **Status values:**
 
-
-| Status       | Meaning                                               |
-| ------------ | ----------------------------------------------------- |
-| `pending`    | Queued, not yet picked up                             |
-| `processing` | Worker is executing                                   |
-| `completed`  | Result available                                      |
-| `failed`     | Execution failed; `result.error` contains the message |
-
+| Status | Meaning |
+|---|---|
+| `pending` | Queued, not yet picked up |
+| `processing` | Worker is executing |
+| `completed` | Result available |
+| `failed` | Execution failed; `result.error` contains the message |
 
 #### `GET /health`
 
@@ -204,12 +198,10 @@ Health check — no auth required.
 
 The worker distinguishes between permanent and transient errors:
 
-
-| Error type    | Examples                                | Behaviour                                       |
-| ------------- | --------------------------------------- | ----------------------------------------------- |
-| **Permanent** | Invalid API key, bad request, not found | Marked `failed` immediately, no retry           |
-| **Transient** | Rate limit, timeout, network error      | Retried up to 3 times (10s / 30s / 60s backoff) |
-
+| Error type | Examples | Behaviour |
+|---|---|---|
+| **Permanent** | Invalid API key, bad request, not found | Marked `failed` immediately, no retry |
+| **Transient** | Rate limit, timeout, network error | Retried up to 3 times (10s / 30s / 60s backoff) |
 
 ---
 
