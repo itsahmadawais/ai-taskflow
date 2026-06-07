@@ -1,76 +1,96 @@
-# AI TaskFlow
+# AI Taskflow
 
-A lightweight distributed task processing system for AI workloads.
+A lightweight distributed task processing system for AI workloads built with FastAPI, PostgreSQL, Redis, and RQ.
 
-AI TaskFlow enables developers to build scalable AI-powered applications using asynchronous task execution, Redis-backed queues, and worker-based processing. It provides a simple architecture for running LLM workflows, background jobs, and long-running AI tasks outside the request-response lifecycle.
+## Overview
 
-## Features
+AI Taskflow is a backend system designed to handle long-running AI operations asynchronously. Instead of processing requests synchronously and blocking API consumers, tasks are persisted, queued, executed by background workers, and tracked throughout their lifecycle.
 
-* Distributed task execution
-* Redis-backed job queues
-* Asynchronous worker processing
-* Task lifecycle tracking
-* LangChain integration
-* OpenAI-compatible model support
-* Environment-based configuration
-* FastAPI-powered API layer
-* Docker-friendly deployment
-
----
+The project demonstrates practical backend engineering patterns commonly used in production systems, including task orchestration, asynchronous processing, queue-based workloads, worker architecture, persistence, and fault tolerance.
 
 ## Architecture
 
-```text
-Client
-   │
-   ▼
-FastAPI API
-   │
-   ▼
-Redis Queue
-   │
-   ▼
-RQ Worker
-   │
-   ▼
-LangChain
-   │
-   ▼
-LLM Provider
-   │
-   ▼
-Result Storage
-```
+The system is composed of four primary components:
 
----
+### API Layer
 
-## Installation
+FastAPI provides REST endpoints for task submission and status retrieval.
 
-### Clone Repository
+### Persistence Layer
+
+PostgreSQL stores task metadata, execution state, inputs, outputs, and failure information.
+
+### Queue Layer
+
+Redis acts as a broker for task distribution between API nodes and background workers.
+
+### Worker Layer
+
+RQ workers consume queued jobs and execute task processors independently from the API lifecycle.
+
+## Task Lifecycle
+
+1. Client submits a task
+2. Task is persisted in PostgreSQL
+3. Task ID is enqueued in Redis
+4. Worker consumes the job
+5. Task status transitions to processing
+6. Appropriate processor executes business logic
+7. Results are persisted
+8. Task status transitions to completed or failed
+
+## Supported Task Types
+
+### Summarization
+
+Generate concise summaries from input text.
+
+### Translation
+
+Translate content between languages.
+
+### Classification
+
+Categorize and label input content.
+
+### Data Extraction
+
+Extract structured information from unstructured text.
+
+## Key Engineering Concepts Demonstrated
+
+* Asynchronous task execution
+* Background worker architecture
+* Queue-based workload distribution
+* Repository pattern
+* Separation of concerns
+* Database session management
+* Retry mechanisms
+* Fault isolation
+* Structured logging
+* Stateless API design
+
+## Technology Stack
+
+* FastAPI
+* PostgreSQL
+* SQLAlchemy
+* Redis
+* RQ (Redis Queue)
+* Pydantic
+
+## Running Locally
+
+### Start PostgreSQL
 
 ```bash
-git clone https://github.com/itsahmadawais/ai-taskflow.git
-cd ai-taskflow
+docker compose up postgres -d
 ```
 
-### Create Virtual Environment
+### Start Redis
 
 ```bash
-python -m venv venv
-```
-
-### Activate Environment
-
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Linux/macOS:
-
-```bash
-source venv/bin/activate
+docker compose up redis -d
 ```
 
 ### Install Dependencies
@@ -79,169 +99,52 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
----
-
-## Configuration
-
-Create a `.env` file:
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-```
-
----
-
-## Running Redis
+### Start API
 
 ```bash
-docker compose up -d
+uvicorn main:app --reload
 ```
 
-Verify Redis is running:
-
-```bash
-docker ps
-```
-
----
-
-## Starting the API
-
-```bash
-uvicorn api.main:app --reload
-```
-
----
-
-## Starting Workers
-
-Open a separate terminal:
+### Start Worker
 
 ```bash
 rq worker tasks
 ```
 
----
+## Example Workflow
 
-## Creating a Task
+Create a task:
 
 ```http
-POST /tasks
+POST /api/v1/tasks
 ```
-
-Request:
 
 ```json
 {
-  "prompt": "Summarize the benefits of distributed systems.",
-  "task_type": "summarize"
-}
-```
-
-Response:
-
-```json
-{
-  "id": "b1a8c8a7",
   "task_type": "summarize",
-  "status": "queued",
-  "result": null
+  "input": {
+    "text": "Long article content..."
+  }
 }
-```
-
----
-
-## Checking Task Status
-
-```http
-GET /tasks/{task_id}
 ```
 
 Response:
 
 ```json
 {
-  "id": "b1a8c8a7",
-  "status": "completed",
-  "result": "Distributed systems improve scalability..."
+  "id": "45b9f642-664d-424b-b507-84e9598d3003",
+  "status": "pending"
 }
 ```
 
----
+Retrieve status:
 
-## Supported Tasks
-
-Currently supported:
-
-* summarize
-* translate
-* classify
-
----
-
-## Project Structure
-
-```text
-ai-taskflow/
-│
-├── api/
-│   └── routes.py
-│
-├── core/
-│   ├── ai_engine.py
-│   ├── config.py
-│   ├── queue.py
-│   └── tasks.py
-│
-├── worker/
-│   └── worker.py
-│
-├── db/
-│   └── job_store.py
-│
-├── .env
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
+```http
+GET /api/v1/tasks/{id}
 ```
 
----
+## Why This Project
 
-## Roadmap
+This project was built to explore the architecture behind modern AI and distributed processing systems where work must be decoupled from request-response cycles. It focuses on reliability, maintainability, and clear separation between API, persistence, queueing, and execution concerns.
 
-### Upcoming
-
-* Task registration system
-* Decorator-based task definitions
-* Plugin architecture
-* Retry policies
-* Dead-letter queue support
-* Scheduled jobs
-* Multi-worker scaling
-* Observability and monitoring
-
----
-
-## Why AI TaskFlow?
-
-Most AI applications execute LLM calls synchronously inside API requests, leading to poor scalability and poor user experience.
-
-AI TaskFlow separates execution from request handling by introducing asynchronous task processing, allowing AI workloads to run independently and scale horizontally through worker processes.
-
-The architecture follows patterns commonly used in production systems built on Redis, SQS, Kafka, Celery, and distributed worker fleets.
-
----
-
-## Contributing
-
-Contributions, feature requests, and bug reports are welcome.
-
-Feel free to open an issue or submit a pull request.
-
----
-
-## License
-
-MIT License
+Rather than optimizing for framework complexity, the goal was to build a simple, understandable system that demonstrates core backend engineering principles used in production environments.

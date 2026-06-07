@@ -9,59 +9,34 @@ import time
 
 logger = get_logger(__name__)
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini", 
-    temperature=0,
-    api_key=settings.OPENAI_API_KEY
-)
-
-
-def get_prompt(prompt_type):
-    match prompt_type:
-        case "summarize":
-            return ChatPromptTemplate.from_template(
-                "Summarize the following text:\n\n{input}"
-            )
-        case "translate":
-            return ChatPromptTemplate.from_template(
-                "Translate the following text to English:\n\n{input}"
-            )
-        case "classify":
-            return ChatPromptTemplate.from_template(
-                "Classify the following text:\n\n{input}"
-            )
-        case _:
-            return ChatPromptTemplate.from_template(
-                "Process the following text:\n\n{input}"
+class AIEngine:
+    """
+    Single entry point for all LLM interactions.
+    Keeps model config centralized.
+    """
+    
+    def __init__(self):
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0,
+            api_key=settings.OPENAI_API_KEY
+        )
+        
+    def generate(self, prompt: str) -> str:
+        start_time = time.perf_counter()
+               
+        try:
+            response = retry(
+                lambda: self.llm.invoke(prompt)
             )
             
-def process_ai_task(task):
-    start_time = time.perf_counter()
-    
-    prompt_type = task["task_type"]
-    user_input = task["prompt"]
-    
-    logger.info(f"Processing task {task['id']} with prompt type {prompt_type}")
-    
-    prompt = get_prompt(prompt_type)
-    
-    chain = prompt | llm
-    
-    try:
-        response = retry(
-        lambda: chain.invoke({
-            "input": user_input
-        })
-        )
-
+        except Exception as e:
+            logger.error(f"Error generating response: {str(e)}")
+            raise
+        
         duration = time.perf_counter() - start_time
-        logger.info(f"Task {task['id']} completed successfully in {duration:.2f} seconds")
-    
-        return {
-            "task_id": task["id"],
-            "status": "completed",
-            "result": response.content,
-        }
-    except Exception as e:
-        logger.error(f"Task {task['id']} failed: {str(e)}")
-        raise
+        logger.info(f"Response generated in {duration:.2f} seconds")
+        
+        return response.content
+        
+ai_engine = AIEngine()
